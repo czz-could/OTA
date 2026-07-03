@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ymodem 串口固件升级工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+            background: #1A1D23;
+            color: #E5E7EB;
+            max-width: 980px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .container {
+            background: #252932;
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+            border: 1px solid #373C46;
+        }
+
+        h2 {
+            text-align: center;
+            color: #4FC3F7;
+            margin-bottom: 24px;
+            font-size: 20px;
+            letter-spacing: 1px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            color: #fff;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        #connect { background: #1677FF; }
+        #disconnect { background: #FA541C; }
+        #selectFile { background: #27AE60; }
+        #sendOTA { background: #FF9800; }
+        #send { background: #722ED1; }
+
+        .info {
+            background: #2D323D;
+            padding: 14px 18px;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            line-height: 1.6;
+            font-size: 14px;
+            border: 1px solid #3B404C;
+        }
+
+        .info span {
+            font-weight: bold;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #333842;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background: linear-gradient(90deg, #4FC3F7, #0099FF);
+            color: #fff;
+            text-align: center;
+            font-size: 11px;
+            line-height: 10px;
+            width: 0%;
+            transition: width 0.2s ease;
+        }
+
+        #log {
+            background: #121418;
+            color: #EAEAEA;
+            padding: 16px;
+            height: 460px;
+            overflow-y: auto;
+            border-radius: 10px;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            border: 1px solid #333842;
+            line-height: 1.45;
+        }
+
+        #log::-webkit-scrollbar { width: 6px; }
+        #log::-webkit-scrollbar-thumb { background: #444B58; border-radius: 3px; }
+    </style>
+</head>
+
+<body>
+<div class="container">
+    <h2>⚙️ Ymodem 串口固件升级工具</h2>
+
+    <div class="controls">
+        <button id="connect">连接串口</button>
+        <button id="disconnect" disabled>断开串口</button>
+        <button id="selectFile">选择 bin 文件</button>
+        <button id="sendOTA" disabled>进入OTA升级模式</button>
+        <button id="send" disabled>开始升级</button>
+    </div>
+
+    <div class="info">
+        连接状态：<span id="status" style="color:#ff4d4f">未连接</span><br>
+        当前文件：<span id="fname">未选择</span><br>
+        文件大小：<span id="fsize">0</span>
+    </div>
+
+    <div class="progress-bar">
+        <div id="progress" class="progress">0%</div>
+    </div>
+
+    <div id="log">[系统] 工具已启动 · 过滤调试打印 · 仅识别 ACK(0x06)
+--------------------------------------------------------
+</div>
+</div>
+
+<script>
+const SOH       = 0x01;
+const EOT       = 0x04;
+const ACK       = 0x06;
+const NAK       = 0x15;
+const CA        = 0x18;
+const C_CHAR    = 0x43;
+
+const connectBtn    = document.getElementById('connect');
+const disconnectBtn = document.getElementById('disconnect');
+const selectFileBtn = document.getElementById('selectFile');
+const sendOTABtn    = document.getElementById('sendOTA');
+const sendBtn       = document.getElementById('send');
+const statusSpan    = document.getElementById('status');
+const fnameSpan     = document.getElementById('fname');
+const fsizeSpan     = document.getElementById('fsize');
+const progressDiv   = document.getElementById('progress');
+const logDiv        = document.getElementById('log');
+
+let port = null;
+let writer = null;
+let reader = null;
+let keepReading = false;
+let rxBuffer = [];
+let receiveLine = "";
+let isDisconnected = false;
+
+let fileData   = null;
+let fileName   = "";
+let fileSize   = 0;
+
+function log(msg) {
+    if (isDisconnected) return;
+    const d = new Date();
+    const time = d.toLocaleTimeString();
+    logDiv.innerHTML += `[${time}] ${msg}\n`;
+    logDiv.scrollTop = logDiv.scrollHeight;
+}
+
+function cleanSerialText(str) {
+    return str
+        .replace(/\.\.+$/g, '')
+        .replace(/\.\.+/g, ' ')
+        .trimEnd();
+}
+
+async function readLoop() {
+    keepReading = true;
+    try {
+        while (keepReading && reader && !isDisconnected) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            if (value) {
+                rxBuffer.push(...value);
+
+                let chunk = '';
+                for (let b of value) {
+                    if (b >= 32 && b <= 126) chunk += String.fromCharCode(b);
+                    else if (b === 10 || b === 13) chunk += '\n';
+                }
+
+                for (let c of chunk) {
+                    if (c === '\n') {
+                        const line = cleanSerialText(receiveLine);
+                        if (line) log(`📥 ${line}`);
+                        receiveLine = "";
+                    } else {
+                        receiveLine += c;
+                    }
+                }
+            }
+        }
+    } catch (e) {} finally {
+        if (reader) {
+            reader.releaseLock();
+            reader = null;
+        }
+    }
+}
+
+function UpdateCRC16(crc, byte) {
+    let c = crc;
+    let inb = byte | 0x100;
+    do { c <<= 1; inb <<=1; if (inb & 0x100) c++; if (c & 0x10000) c ^= 0x1021; } while (!(inb & 0x10000));
+    return c & 0xFFFF;
+}
+
+function calcCRC16(data, len) {
+    let crc = 0;
+    for (let i = 0; i < len; i++) crc = UpdateCRC16(crc, data[i]);
+    crc = UpdateCRC16(crc, 0);
+    crc = UpdateCRC16(crc, 0);
+    return crc & 0xFFFF;
+}
+
+async function waitTargetByte(target, timeout) {
+    const end = Date.now() + timeout;
+    while (Date.now() < end) {
+        if (isDisconnected) return null;
+        while(rxBuffer.length > 0){
+            let b = rxBuffer.shift();
+            if(b === target) return b;
+        }
+        await new Promise(r => setTimeout(r,1));
+    }
+    return null;
+}
+
+async function waitOTAReceived(timeout = 1000) {
+    const end = Date.now() + timeout;
+    let buffer = "";
+    while (Date.now() < end) {
+        if (isDisconnected) return false;
+        while (rxBuffer.length > 0) {
+            const c = String.fromCharCode(rxBuffer.shift());
+            buffer += c;
+            if (buffer.includes("OTA Received")) {
+                return true;
+            }
+        }
+        await new Promise(r => setTimeout(r, 1));
+    }
+    return false;
+}
+
+async function sendOTACommand() {
+    try {
+        log("📤 发送 OTA 指令，等待应答...");
+        rxBuffer = [];
+        
+        await writer.write(new TextEncoder().encode("OTA\r\n"));
+
+        const ok = await waitOTAReceived(1000);
+        if (!ok) {
+            log("❌ OTA 指令下发失败：1秒内未收到应答");
+            sendOTABtn.disabled = false;
+            return;
+        }
+
+        log("✅ 已收到 OTA Received，准备开始升级");
+        sendOTABtn.disabled = true;
+        await new Promise(r => setTimeout(r, 200));
+        startSend();
+    } catch (e) {
+        log("❌ 发送OTA指令失败");
+        sendOTABtn.disabled = false;
+    }
+}
+
+async function connect() {
+    try {
+        isDisconnected = false;
+        port = await navigator.serial.requestPort();
+        await port.open({ baudRate:115200, dataBits:8, stopBits:1, parity:'none', flowControl:'none' });
+        await port.setSignals({ dataTerminalReady:false, requestToSend:false });
+        log("✅ 串口已连接");
+        writer = port.writable.getWriter();
+        reader = port.readable.getReader();
+        readLoop();
+        statusSpan.textContent = "已连接"; statusSpan.style.color = "#00C48C";
+        connectBtn.disabled = true;
+        disconnectBtn.disabled = false;
+        sendOTABtn.disabled = false;
+    } catch (e) { log("❌ 连接失败"); }
+}
+
+async function disconnect() {
+    if (isDisconnected) return;
+    isDisconnected = true;
+    keepReading = false;
+
+    log("🔌 正在释放串口资源...");
+
+    if (reader) {
+        try {
+            await reader.cancel();
+            await reader.releaseLock();
+        } catch (e) {}
+        reader = null;
+    }
+
+    if (writer) {
+        try {
+            await writer.close();
+            await writer.releaseLock();
+        } catch (e) {}
+        writer = null;
+    }
+
+    if (port) {
+        try {
+            await port.close();
+        } catch (e) {}
+        port = null;
+    }
+
+    rxBuffer = [];
+    receiveLine = "";
+
+    log("✅ 串口已彻底释放，可重新连接");
+    statusSpan.textContent = "未连接"; statusSpan.style.color = "#ff4d4f";
+    connectBtn.disabled = false;
+    disconnectBtn.disabled = true;
+    sendOTABtn.disabled = true;
+    sendBtn.disabled = true;
+}
+
+function selectFile() {
+    const i = document.createElement('input'); i.type='file'; i.accept='.bin';
+    i.onchange = async e => {
+        const f = e.target.files[0];
+        fileName = f.name; fileSize = f.size;
+        fileData = new Uint8Array(await f.arrayBuffer());
+        fnameSpan.textContent = fileName; fsizeSpan.textContent = fileSize + " B";
+        log(`📁 已选文件：${fileName} (${fileSize} B)`);
+        sendBtn.disabled = false;
+    };
+    i.click();
+}
+
+async function startSend() {
+    sendBtn.disabled = true;
+    sendOTABtn.disabled = true;
+    if (isDisconnected) {
+        sendBtn.disabled = false;
+        sendOTABtn.disabled = false;
+        return;
+    }
+
+    log("---------------- 开始升级 ----------------");
+    rxBuffer = [];
+
+    log("⌛ 等待IAP发送 C...");
+    if(await waitTargetByte(C_CHAR, 8000) === null) {
+        log("❌ 升级失败：未进入 IAP 模式");
+        sendBtn.disabled = false;
+        sendOTABtn.disabled = false;
+        return;
+    }
+
+    const namePkt = new Uint8Array(133);
+    namePkt[0] = SOH; namePkt[1] = 0; namePkt[2] = 0xFF;
+    let p = 3;
+    for (let c of fileName) namePkt[p++] = c.charCodeAt(0);
+    namePkt[p++] = 0;
+    for (let c of ""+fileSize) namePkt[p++] = c.charCodeAt(0);
+    namePkt[p++] = 0;
+    while(p < 131) namePkt[p++] = 0x1A;
+    const crcName = calcCRC16(namePkt.slice(3,131),128);
+    namePkt[131]=(crcName>>8)&0xFF;
+    namePkt[132]=crcName&0xFF;
+    await writer.write(namePkt);
+
+    log("✅ 文件名包发送，等待单片机擦除Flash（请勿断开）...");
+    
+    if(await waitTargetByte(ACK, 20000) === null) {
+        log("❌ 升级失败：文件头包应答超时");
+        sendBtn.disabled = false;
+        sendOTABtn.disabled = false;
+        return;
+    }
+
+    if(await waitTargetByte(C_CHAR, 5000) === null) {
+        log("❌ 升级失败：未收到传输请求");
+        sendBtn.disabled = false;
+        sendOTABtn.disabled = false;
+        return;
+    }
+
+    log("✅ 准备就绪，开始传输数据");
+
+    let offset = 0;
+    let seq = 1;
+    const total = fileSize;
+    while(offset < total){
+        if (isDisconnected) return;
+        const pkt = new Uint8Array(133);
+        pkt[0]=SOH;
+        pkt[1]=seq%256;
+        pkt[2]=0xff-pkt[1];
+        const len = Math.min(128, total-offset);
+        for(let i=0;i<len;i++) pkt[3+i]=fileData[offset+i];
+        for(let i=len;i<128;i++) pkt[3+i]=0x1A;
+        const crc = calcCRC16(pkt.slice(3,131),128);
+        pkt[131]=(crc>>8)&0xFF;
+        pkt[132]=crc&0xFF;
+
+        await writer.write(pkt);
+        
+        if(await waitTargetByte(ACK, 5000) === null) {
+            log(`❌ 升级失败：第 ${seq} 包发送失败`);
+            sendBtn.disabled = false;
+            sendOTABtn.disabled = false;
+            return;
+        }
+        
+        log(`📤 第${seq}包 确认成功 ${offset+128}/${total}`);
+
+        offset +=128;
+        seq++;
+        
+        // 修复进度条，限制最大值为 100%
+        const percent = Math.min(100, Math.floor(offset / total * 100));
+        progressDiv.style.width = percent + "%";
+        progressDiv.innerText = percent + "%";
+    }
+
+    if (isDisconnected) return;
+
+    log("⌛ 发送结束指令 EOT");
+    await writer.write(Uint8Array.from([EOT]));
+    await waitTargetByte(ACK, 5000);
+
+    await writer.write(Uint8Array.from([EOT]));
+    await waitTargetByte(ACK, 5000);
+
+    const endPkt = new Uint8Array(133);
+    endPkt.fill(0);
+    endPkt[0]=SOH;endPkt[1]=0;endPkt[2]=0xFF;
+    const endCrc = calcCRC16(endPkt.slice(3,131),128);
+    endPkt[131]=(endCrc>>8)&0xFF;
+    endPkt[132]=endCrc&0xFF;
+    await writer.write(endPkt);
+    await waitTargetByte(ACK, 5000);
+
+    log("🎉 升级成功！设备即将重启");
+    
+    progressDiv.style.width = "100%";
+    progressDiv.innerText = "100%";
+    
+    sendBtn.disabled = false;
+    sendOTABtn.disabled = false;
+}
+
+connectBtn.addEventListener('click', connect);
+disconnectBtn.addEventListener('click', disconnect);
+selectFileBtn.addEventListener('click', selectFile);
+sendOTABtn.addEventListener('click', sendOTACommand);
+sendBtn.addEventListener('click', startSend);
+</script>
+</body>
+</html>
