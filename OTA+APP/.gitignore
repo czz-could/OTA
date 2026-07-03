@@ -1,0 +1,17 @@
+# Keil 编译产物
+*.axf
+*.bin
+*.hex
+*.map
+*.o
+*.crf
+*.d
+*.dep
+*.uvguix.*
+*.build_log.htm
+# 调试缓存
+Debug/
+Release/
+# 系统文件
+.DS_Store
+Thumbs.db

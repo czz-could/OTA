@@ -63,7 +63,7 @@ void SystemClock_Config(void);
 
 // ´®¿Ú½ÓÊÕ»º´æ
 #define RX_BUF_SIZE 64
-#define Current_Version "V0.9.0"
+#define Current_Version "V0.1.0"
 uint8_t uart_rx_buf[RX_BUF_SIZE];
 uint16_t uart_rx_cnt = 0;
 uint8_t OTA_FLAG = 0;
