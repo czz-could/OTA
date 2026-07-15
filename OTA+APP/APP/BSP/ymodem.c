@@ -211,6 +211,7 @@ static void PrepareIntialPacket(uint8_t *p_data, const uint8_t *p_file_name, uin
     {
         p_data[i++] = astring[j++];
     }
+		p_data[i++] = ' ';  // 使用空格符进行分割
 
     /* padding with zeros */
     for (j = i; j < PACKET_SIZE + PACKET_DATA_INDEX; j++)

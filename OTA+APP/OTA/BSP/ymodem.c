@@ -106,7 +106,7 @@ uint8_t CalcChecksum(const uint8_t *p_data, uint32_t size);
 static HAL_StatusTypeDef ReceivePacket(uint8_t *p_data, uint32_t *p_length, uint32_t timeout)
 {
     uint32_t crc;
-    uint32_t packet_size = 0;// µ±Ç°°üÓÐÐ§ÔØºÉ³¤¶È£¬Ä¬ÈÏ0
+    uint32_t packet_size = 0;// ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½Ð§ï¿½ØºÉ³ï¿½ï¿½È£ï¿½Ä¬ï¿½ï¿½0
     HAL_StatusTypeDef status;
     uint8_t char1;
 
@@ -118,21 +118,21 @@ static HAL_StatusTypeDef ReceivePacket(uint8_t *p_data, uint32_t *p_length, uint
         switch (char1)
         {
         case SOH:
-            packet_size = PACKET_SIZE;// ÔØºÉ128×Ö½Ú
+            packet_size = PACKET_SIZE;// ï¿½Øºï¿½128ï¿½Ö½ï¿½
             break;
         case STX:
-            packet_size = PACKET_1K_SIZE;// ÔØºÉ1024×Ö½Ú
+            packet_size = PACKET_1K_SIZE;// ï¿½Øºï¿½1024ï¿½Ö½ï¿½
             break;
         case EOT:
-            break;// packet_size ±£³Ö0£¬ÉÏ²ãÊ¶±ðÎª´«ÊäÍê±Ï
-        case CA:// ÔÙÊÕµÚ¶þ¸ö×Ö½Ú£¬±ØÐëÒ²ÊÇCA
-            if ((Serial_Recv_data(&char1, 1, timeout) == HAL_OK) && (char1 == CA))// ±ê¼Ç³¤¶È=2£¬ÉÏ²ãÅÐ¶¨·¢ËÍ¶ËÖ÷¶¯ÖÐÖ¹
+            break;// packet_size ï¿½ï¿½ï¿½ï¿½0ï¿½ï¿½ï¿½Ï²ï¿½Ê¶ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        case CA:// ï¿½ï¿½ï¿½ÕµÚ¶ï¿½ï¿½ï¿½ï¿½Ö½Ú£ï¿½ï¿½ï¿½ï¿½ï¿½Ò²ï¿½ï¿½CA
+            if ((Serial_Recv_data(&char1, 1, timeout) == HAL_OK) && (char1 == CA))// ï¿½ï¿½Ç³ï¿½ï¿½ï¿½=2ï¿½ï¿½ï¿½Ï²ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½Í¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¹
             {
                 packet_size = 2;
             }
             else
             {
-                status = HAL_ERROR;// Ö»ÊÕµ½µ¥¸öCA£¬ÅÐ¶¨´«Êä´íÎó
+                status = HAL_ERROR;// Ö»ï¿½Õµï¿½ï¿½ï¿½ï¿½ï¿½CAï¿½ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             }
             break;
         case ABORT1:
@@ -147,12 +147,12 @@ static HAL_StatusTypeDef ReceivePacket(uint8_t *p_data, uint32_t *p_length, uint
 
         if (packet_size >= PACKET_SIZE)
         {
-            status = Serial_Recv_data(&p_data[PACKET_NUMBER_INDEX], packet_size + PACKET_OVERHEAD_SIZE, timeout);// ÊÂÏÈÒÑ½ÓÊÕµ½SOH»òSTX£¬ËùÒÔ3+2-1
+            status = Serial_Recv_data(&p_data[PACKET_NUMBER_INDEX], packet_size + PACKET_OVERHEAD_SIZE, timeout);// ï¿½ï¿½ï¿½ï¿½ï¿½Ñ½ï¿½ï¿½Õµï¿½SOHï¿½ï¿½STXï¿½ï¿½ï¿½ï¿½ï¿½ï¿½3+2-1
 
             /* Simple packet sanity check */
             if (status == HAL_OK)
             {
-                if (p_data[PACKET_NUMBER_INDEX] != ((p_data[PACKET_CNUMBER_INDEX]) ^ NEGATIVE_BYTE))// ½øÐÐ°üºÅÒì»òÐ£Ñé
+                if (p_data[PACKET_NUMBER_INDEX] != ((p_data[PACKET_CNUMBER_INDEX]) ^ NEGATIVE_BYTE))// ï¿½ï¿½ï¿½Ð°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½
                 {
                     packet_size = 0;
                     status = HAL_ERROR;
@@ -211,6 +211,7 @@ static void PrepareIntialPacket(uint8_t *p_data, const uint8_t *p_file_name, uin
     {
         p_data[i++] = astring[j++];
     }
+    p_data[i++] = ' ';  // Ê¹ÓÃ¿Õ¸ñ·û½øÐÐ·Ö¸î
 
     /* padding with zeros */
     for (j = i; j < PACKET_SIZE + PACKET_DATA_INDEX; j++)
@@ -330,15 +331,15 @@ uint8_t CalcChecksum(const uint8_t *p_data, uint32_t size)
 
 /*
 
-                               ·¢ËÍ¶Ë                                                         ½ÓÊÕ¶Ë
+                               ï¿½ï¿½ï¿½Í¶ï¿½                                                         ï¿½ï¿½ï¿½Õ¶ï¿½
 
-»á»°Æô¶¯                                <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< C
+ï¿½á»°ï¿½ï¿½ï¿½ï¿½                                <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< C
 
-Í·ÎÄ¼þ´«Êä                SOH 00 FF foo.c<0x00>4196<0x20>NULL[117] CRC CRC>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+Í·ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½                SOH 00 FF foo.c<0x00>4196<0x20>NULL[117] CRC CRC>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
                                         <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< ACK
                                         <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< C
 
-Êý¾Ý´«Êä                  STX 01 FE data[1024] CRC CRC>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ï¿½ï¿½ï¿½Ý´ï¿½ï¿½ï¿½                  STX 01 FE data[1024] CRC CRC>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
                                         <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< ACK
                           STX 02 FD data[1024] CRC CRC>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
                                         <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< ACK
@@ -349,56 +350,56 @@ uint8_t CalcChecksum(const uint8_t *p_data, uint32_t size)
                           SOH XX XX data[100] CPMEOF[28] CRC CRC>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
                                         <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< ACK
 
-ÎÄ¼þ½áÊø                  EOT>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½                  EOT>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
                                         <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< NAK
                           EOT>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
                                         <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< ACK
 
-»á»°½áÊø                                <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< C
+ï¿½á»°ï¿½ï¿½ï¿½ï¿½                                <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< C
                           SOH 00 FF NULL[128] CRC CRC>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
                                         <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< ACK
 																				
 																				
-·¢ËÍ¶Ë:
-¡ñ SOH (0x01)  128×Ö½Ú°ü
-¡ñ STX (0x02)  1024×Ö½Ú°ü
-¡ñ EOT (0x04)  ´«Êä½áÊø
-¡ñ foo.c  			ÎÄ¼þÃû
-¡ñ 0x00  			·Ö¸ô·û
-¡ñ 0x20  			¿Õ¸ñ£¨·Ö¸ô£©
-¡ñ ·¢ËÍ¶ËÒª°Ñ×îºó²»×ãÕû°üµÄÊ£Óà×Ö½ÚºóÃæÌî³ä 0x00£¬´ÕÆëÍêÕû 128 / 1024 ×Ö½Ú·¢°ü
+ï¿½ï¿½ï¿½Í¶ï¿½:
+ï¿½ï¿½ SOH (0x01)  128ï¿½Ö½Ú°ï¿½
+ï¿½ï¿½ STX (0x02)  1024ï¿½Ö½Ú°ï¿½
+ï¿½ï¿½ EOT (0x04)  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+ï¿½ï¿½ foo.c  			ï¿½Ä¼ï¿½ï¿½ï¿½
+ï¿½ï¿½ 0x00  			ï¿½Ö¸ï¿½ï¿½ï¿½
+ï¿½ï¿½ 0x20  			ï¿½Õ¸ñ£¨·Ö¸ï¿½ï¿½ï¿½
+ï¿½ï¿½ ï¿½ï¿½ï¿½Í¶ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê£ï¿½ï¿½ï¿½Ö½Úºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 0x00ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 128 / 1024 ï¿½Ö½Ú·ï¿½ï¿½ï¿½
 
-½ÓÊÕ¶Ë
-¡ñ C (0x43)    ·¢ÆðÇëÇó
-¡ñ ACK (0x06)  È·ÈÏ
-¡ñ NAK (0x15)  ÇëÇóÖØ´«
-¡ñ ½ÓÊÕ¶Ë²»ÊÕÌî³äµÄ 0£¬Ö»ÓÃÇ°ÃæÕæÊµÓÐÐ§³¤¶È£¬Flash Ö»Ð´ÈëÕæÊµÎÄ¼þ´óÐ¡£¬¶àÓàÌî³ä×Ö½Ú¶ªÆú
+ï¿½ï¿½ï¿½Õ¶ï¿½
+ï¿½ï¿½ C (0x43)    ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+ï¿½ï¿½ ACK (0x06)  È·ï¿½ï¿½
+ï¿½ï¿½ NAK (0x15)  ï¿½ï¿½ï¿½ï¿½ï¿½Ø´ï¿½
+ï¿½ï¿½ ï¿½ï¿½ï¿½Õ¶Ë²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 0ï¿½ï¿½Ö»ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½Êµï¿½ï¿½Ð§ï¿½ï¿½ï¿½È£ï¿½Flash Ö»Ð´ï¿½ï¿½ï¿½ï¿½Êµï¿½Ä¼ï¿½ï¿½ï¿½Ð¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö½Ú¶ï¿½ï¿½ï¿½
 																				
 
 
 
-| Êý¾Ý°ü¿ªÊ¼ÐÅºÅ | ·¢ËÍÐòºÅ | ·¢ËÍÐòºÅ·´Âë | Êý¾ÝÇø      | CRC¸ß×Ö½Ú | CRCµÍ×Ö½Ú |
+| ï¿½ï¿½ï¿½Ý°ï¿½ï¿½ï¿½Ê¼ï¿½Åºï¿½ | ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ | ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Å·ï¿½ï¿½ï¿½ | ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½      | CRCï¿½ï¿½ï¿½Ö½ï¿½ | CRCï¿½ï¿½ï¿½Ö½ï¿½ |
 | -------------- | -------- | ------------ | ----------- | --------- | --------- |
 | SOH/STX        | 01       | FE           | ...         | ...       | ...       |
 | 1Byte          | 1Byte    | 1Byte        | 128/1024Byte| 1Byte     | 1Byte     |
 
 
-Êý¾Ý°ü¿ªÊ¼ÐÅºÅ£¨1 ×Ö½Ú£©
-	SOH£ºÐ¡Êý¾Ý°ü£¨Í·ÐÅÏ¢¡¢½áÊø»á»°°ü£¬Êý¾Ý³¤¶È 128 ×Ö½Ú£©
-	STX£º´óÊý¾Ý°ü£¨ÎÄ¼þ·ÖÆ¬Êý¾Ý£¬Êý¾Ý³¤¶È 1024 ×Ö½Ú£©
+ï¿½ï¿½ï¿½Ý°ï¿½ï¿½ï¿½Ê¼ï¿½ÅºÅ£ï¿½1 ï¿½Ö½Ú£ï¿½
+	SOHï¿½ï¿½Ð¡ï¿½ï¿½ï¿½Ý°ï¿½ï¿½ï¿½Í·ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½á»°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý³ï¿½ï¿½ï¿½ 128 ï¿½Ö½Ú£ï¿½
+	STXï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý°ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½Æ¬ï¿½ï¿½ï¿½Ý£ï¿½ï¿½ï¿½ï¿½Ý³ï¿½ï¿½ï¿½ 1024 ï¿½Ö½Ú£ï¿½
 	
-·¢ËÍÐòºÅ£¨1 ×Ö½Ú£©
-	Ö¡±àºÅ£º00¡¢01¡¢02¡¢03¡¢04ÒÀ´ÎµÝÔö£¬ÓÃÀ´Ð£ÑéÖ¡Ë³Ðò¡¢ÖØ´«ÅÐ¶¨,ÐòºÅ×ßµ½ 255 Ö®ºó£¬ÏÂÒ»Ö¡Ö±½ÓÖØÖÃÎª 0 ¼ÌÐøµÝÔöÑ­»·¡£
+ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Å£ï¿½1 ï¿½Ö½Ú£ï¿½
+	Ö¡ï¿½ï¿½Å£ï¿½00ï¿½ï¿½01ï¿½ï¿½02ï¿½ï¿½03ï¿½ï¿½04ï¿½ï¿½ï¿½Îµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½Ö¡Ë³ï¿½ï¿½ï¿½Ø´ï¿½ï¿½Ð¶ï¿½,ï¿½ï¿½ï¿½ï¿½ßµï¿½ 255 Ö®ï¿½ï¿½ï¿½ï¿½Ò»Ö¡Ö±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îª 0 ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ­ï¿½ï¿½ï¿½ï¿½
 	
-·¢ËÍÐòºÅ·´Âë£¨1 ×Ö½Ú£©
-	ÐòºÅ°´Î»È¡·´£¬Ê¾Àý£ºÐòºÅ01 ¡ú ·´ÂëFE£¬½ÓÊÕ¶ËÐ£Ñé¡¸ÐòºÅ + ·´Âë¡¹ºÍÎª0xFF£¬ÓÃÀ´Ð£ÑéÐòºÅ×Ö½Ú´«ÊäÊÇ·ñ³ö´í¡£
+ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Å·ï¿½ï¿½ë£¨1 ï¿½Ö½Ú£ï¿½
+	ï¿½ï¿½Å°ï¿½Î»È¡ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½01 ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½FEï¿½ï¿½ï¿½ï¿½ï¿½Õ¶ï¿½Ð£ï¿½é¡¸ï¿½ï¿½ï¿½ + ï¿½ï¿½ï¿½ë¡¹ï¿½ï¿½Îª0xFFï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö½Ú´ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	
-Êý¾ÝÇø
-	SOH Ö¡£º¹Ì¶¨ 128 Byte
-	STX Ö¡£º¹Ì¶¨ 1024 Byte
+ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	SOH Ö¡ï¿½ï¿½ï¿½Ì¶ï¿½ 128 Byte
+	STX Ö¡ï¿½ï¿½ï¿½Ì¶ï¿½ 1024 Byte
 	
-CRC ¸ß¡¢µÍ×Ö½Ú£¨¸÷ 1 ×Ö½Ú£¬¹² 2 ×Ö½Ú CRC Ð£Ñé£©
-	¶ÔÇ°ÃæÈ«²¿×Ö¶Î×ö CRC ÔËËã£¬½ÓÊÕ¶ËÖØËã CRC ±È¶Ô£¬¼ì²âÕûÖ¡´«ÊäÎóÂë
+CRC ï¿½ß¡ï¿½ï¿½ï¿½ï¿½Ö½Ú£ï¿½ï¿½ï¿½ 1 ï¿½Ö½Ú£ï¿½ï¿½ï¿½ 2 ï¿½Ö½ï¿½ CRC Ð£ï¿½é£©
+	ï¿½ï¿½Ç°ï¿½ï¿½È«ï¿½ï¿½ï¿½Ö¶ï¿½ï¿½ï¿½ CRC ï¿½ï¿½ï¿½ã£¬ï¿½ï¿½ï¿½Õ¶ï¿½ï¿½ï¿½ï¿½ï¿½ CRC ï¿½È¶Ô£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 
 */
@@ -414,14 +415,14 @@ CRC ¸ß¡¢µÍ×Ö½Ú£¨¸÷ 1 ×Ö½Ú£¬¹² 2 ×Ö½Ú CRC Ð£Ñé£©
 COM_StatusTypeDef Ymodem_Receive(uint32_t *p_size)
 {
     uint32_t other_len = 0;
-    uint32_t file_all_num = 0; // Êý¾Ý°ü×ÜÊý
+    uint32_t file_all_num = 0; // ï¿½ï¿½ï¿½Ý°ï¿½ï¿½ï¿½ï¿½ï¿½
     uint32_t i, packet_length, session_done = 0, file_done, errors = 0, session_begin = 0;
     uint32_t flashdestination, ramsource, filesize;
     uint8_t *file_ptr;
     uint8_t file_size[FILE_SIZE_LENGTH] = {0};
     uint8_t tmp = 0;
-    uint32_t packets_received; // µ±Ç°½ÓÊÕµ½°üµÄÊýÁ¿
-    // uint32_t last_packets_received; // µ±Ç°½ÓÊÕµ½°üµÄÊýÁ¿    
+    uint32_t packets_received; // ï¿½ï¿½Ç°ï¿½ï¿½ï¿½Õµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    // uint32_t last_packets_received; // ï¿½ï¿½Ç°ï¿½ï¿½ï¿½Õµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½    
     COM_StatusTypeDef result = COM_OK;
 
     /* Initialize flashdestination variable */
@@ -443,14 +444,14 @@ COM_StatusTypeDef Ymodem_Receive(uint32_t *p_size)
                 errors = 0;
                 switch (packet_length)
                 {
-                case 2: // ÖÕÖ¹
+                case 2: // ï¿½ï¿½Ö¹
                     /* Abort by sender */
                     Serial_PutByte(ACK);
                     result = COM_ABORT;
                     break;
-                case 0: // ´«ÊäÍê³É
-                    /* End of transmission »Ø¸´ ACK + ×Ô¶¨Òå CO*/
-                    printf("Êý¾Ý´«ÊäÍê³É\r\n");
+                case 0: // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+                    /* End of transmission ï¿½Ø¸ï¿½ ACK + ï¿½Ô¶ï¿½ï¿½ï¿½ CO*/
+                    printf("ï¿½ï¿½ï¿½Ý´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\r\n");
                     Serial_PutByte(ACK);
                     Serial_PutByte(CRC16);
                     Serial_PutByte(0x4F);
@@ -464,23 +465,23 @@ COM_StatusTypeDef Ymodem_Receive(uint32_t *p_size)
                     /* Normal packet */
                     // if (aPacketData[PACKET_NUMBER_INDEX] != packets_received)
                     printf("pack:%d ymod_pack%d\r\n", packets_received, aPacketData[PACKET_NUMBER_INDEX]);
-                    if ((packets_received % 256) != aPacketData[PACKET_NUMBER_INDEX])// ÐòºÅ²»Æ¥Åä£¬»Ø¸´NAKÇëÇóÖØ´«±¾°ü
+                    if ((packets_received % 256) != aPacketData[PACKET_NUMBER_INDEX])// ï¿½ï¿½Å²ï¿½Æ¥ï¿½ä£¬ï¿½Ø¸ï¿½NAKï¿½ï¿½ï¿½ï¿½ï¿½Ø´ï¿½ï¿½ï¿½ï¿½ï¿½
                     {
                         printf("---<\r\n");
                         Serial_PutByte(NAK);
                     }
                     else
                     {
-                        if (packets_received == 0) // µÚÒ»°üÊý¾Ý
+                        if (packets_received == 0) // ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                         {
                             printf("First pack\r\n");
                             /* File name packet */
-                            if (aPacketData[PACKET_DATA_INDEX] != 0) // ÎÄ¼þÃû²»Îª¿Õ
+                            if (aPacketData[PACKET_DATA_INDEX] != 0) // ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½
                             {
                                 /* File name extraction */
                                 i = 0;
                                 file_ptr = aPacketData + PACKET_DATA_INDEX;
-                                while ((*file_ptr != 0) && (i < FILE_NAME_LENGTH))// 1¡¢½âÎöÎÄ¼þÃû£º¶ÁÈ¡µ½0x00·Ö¸ô·ûÎªÖ¹
+                                while ((*file_ptr != 0) && (i < FILE_NAME_LENGTH))// 1ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½0x00ï¿½Ö¸ï¿½ï¿½ï¿½ÎªÖ¹
                                 {
                                     aFileName[i++] = *file_ptr++;
                                 }
@@ -489,16 +490,16 @@ COM_StatusTypeDef Ymodem_Receive(uint32_t *p_size)
                                 aFileName[i++] = '\0';
                                 i = 0;
                                 file_ptr++;
-                                while ((*file_ptr != ' ') && (i < FILE_SIZE_LENGTH))// 2¡¢Ìø¹ý0x00·Ö¸ô·û£¬½âÎö¿Õ¸ñÇ°µÄÊý×Ö×Ö·û´®£¨¹Ì¼þ³¤¶È£©
+                                while ((*file_ptr != ' ') && (i < FILE_SIZE_LENGTH))// 2ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½0x00ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ¸ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¼ï¿½ï¿½ï¿½ï¿½È£ï¿½
                                 {
                                     file_size[i++] = *file_ptr++;
                                 }
                                 file_size[i++] = '\0';
-                                Str2Int(file_size, &filesize);// ASCIIÊý×Ö´®×ªuint32_tÊýÖµ³¤¶È
+                                Str2Int(file_size, &filesize);// ASCIIï¿½ï¿½ï¿½Ö´ï¿½×ªuint32_tï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½
 
                                 /* Test the size of the image to be sent */
                                 /* Image size is greater than Flash size */
-                                if (filesize > (USER_FLASH_SIZE + 1))// Ê¹ÓÃÄÚ²¿½âÎö³öµÄÕæÊµ¹Ì¼þ³¤¶ÈÅÐ¶Ï£¬²»ÔÙÓÃ*p_size
+                                if (filesize > (USER_FLASH_SIZE + 1))// Ê¹ï¿½ï¿½ï¿½Ú²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Êµï¿½Ì¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*p_size
                                 {
                                     /* End session */
                                     tmp = CA;
@@ -507,7 +508,7 @@ COM_StatusTypeDef Ymodem_Receive(uint32_t *p_size)
                                     result = COM_LIMIT;
                                 }
                                 /* erase user application area */
-																		Erase_Apparea();//²Á³ýappÇøflash
+																		Erase_Apparea();//ï¿½ï¿½ï¿½ï¿½appï¿½ï¿½flash
                                 // FLASH_If_Erase(APPLICATION_ADDRESS);
 
                                 *p_size = filesize;
@@ -536,12 +537,12 @@ COM_StatusTypeDef Ymodem_Receive(uint32_t *p_size)
                         }
                         else /* Data packet */
                         {
-                            ramsource = (uint32_t)&aPacketData[PACKET_DATA_INDEX];// ¿ÉÄÜÏë¿ªÆôDMA°áÔËÊý¾Ý£¬ºóÃæ²»ÖªµÀÎªºÎ·½°¸·ÏÆúÁË
+                            ramsource = (uint32_t)&aPacketData[PACKET_DATA_INDEX];// ï¿½ï¿½ï¿½ï¿½ï¿½ë¿ªï¿½ï¿½DMAï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý£ï¿½ï¿½ï¿½ï¿½æ²»Öªï¿½ï¿½Îªï¿½Î·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
                             memcpy(&flash_buf[flash_buf_rx_cnt], &aPacketData[PACKET_DATA_INDEX], PACKET_SIZE);
                             flash_buf_rx_cnt = flash_buf_rx_cnt + PACKET_SIZE;
 
-                            if (((packets_received % 16) == 0) || (packets_received == file_all_num))// Âú2k»òÕßµ±Ç°½ÓÊÕÊý¾Ý°üÊýÁ¿=×î´óµÄÊý¾Ý°üÊýÁ¿£¬Ö´ÐÐ2kÐ´Èë£¬È»ºó¶Á³öÀ´Ð£ÑéÐ´Èë¹ý³ÌÖÐÓÐÃ»ÓÐ³ö´í
+                            if (((packets_received % 16) == 0) || (packets_received == file_all_num))// ï¿½ï¿½2kï¿½ï¿½ï¿½ßµï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý°ï¿½ï¿½ï¿½ï¿½ï¿½=ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö´ï¿½ï¿½2kÐ´ï¿½ë£¬È»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã»ï¿½Ð³ï¿½ï¿½ï¿½
                             {
                                 flash_buf_rx_cnt = 0;
 
@@ -558,8 +559,8 @@ COM_StatusTypeDef Ymodem_Receive(uint32_t *p_size)
                                 memset(flash_buf, 0, 2048);
                             }
 
-                            // ÓÃÓÚ½Ø¶ÏÄ©Î²ÉÏÎ»»ú²¹ÆëµÄÌî³ä 0£¬²»»á°Ñ¶àÓàÌî³ä×Ö½ÚÐ´Èë Flash£¬µ«±¾´Î²¢Ã»ÓÐÊ¹ÓÃÕâ¸ö¶«Î÷°ÑÊ£ÓàÊý¾ÝÐ´Èë£¬ÈÝÒ×³öÏÖÐ´Èëµ½²»´æÔÚµÄµØÖ·£¬³ö´óÎÊÌâ£¬Ö»ÄÜ±£Ö¤Éý¼¶µÄ
-														// app´óÐ¡Ð¡ÓÚ×î´óÖµ-2k
+                            // ï¿½ï¿½ï¿½Ú½Ø¶ï¿½Ä©Î²ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 0ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö½ï¿½Ð´ï¿½ï¿½ Flashï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î²ï¿½Ã»ï¿½ï¿½Ê¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ë£¬ï¿½ï¿½ï¿½×³ï¿½ï¿½ï¿½Ð´ï¿½ëµ½ï¿½ï¿½ï¿½ï¿½ï¿½ÚµÄµï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½â£¬Ö»ï¿½Ü±ï¿½Ö¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+														// appï¿½ï¿½Ð¡Ð¡ï¿½ï¿½ï¿½ï¿½ï¿½Öµ-2k
                             if (other_len >= packet_length)
                             {
                                 other_len = other_len - packet_length;
@@ -584,7 +585,7 @@ COM_StatusTypeDef Ymodem_Receive(uint32_t *p_size)
                     break;
                 }
                 break;
-								case HAL_BUSY: /* Abort actually ·¢ËÍÁ½´Î£¬ÖÕÖ¹¶Ô»°*/
+								case HAL_BUSY: /* Abort actually ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î£ï¿½ï¿½ï¿½Ö¹ï¿½Ô»ï¿½*/
                 Serial_PutByte(CA);
                 Serial_PutByte(CA);
                 result = COM_ABORT;
@@ -594,9 +595,9 @@ COM_StatusTypeDef Ymodem_Receive(uint32_t *p_size)
                 {
                     errors++;
                 }
-                if (errors > MAX_ERRORS)// Á¬Ðø5´Î²»³É¹¦£¬½áÊøÍ¨ÐÅ
+                if (errors > MAX_ERRORS)// ï¿½ï¿½ï¿½ï¿½5ï¿½Î²ï¿½ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¨ï¿½ï¿½
                 {
-                    /* Abort communication ·¢ËÍÁ½´Î£¬ÖÕÖ¹¶Ô»°**/
+                    /* Abort communication ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î£ï¿½ï¿½ï¿½Ö¹ï¿½Ô»ï¿½**/
                     Serial_PutByte(CA);
                     Serial_PutByte(CA);
                 }
