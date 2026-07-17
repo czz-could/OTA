@@ -66,7 +66,7 @@ void SystemClock_Config(void);
 #define Current_Version "V0.1.0"
 uint8_t uart_rx_buf[RX_BUF_SIZE];
 uint16_t uart_rx_cnt = 0;
-uint8_t OTA_FLAG = 0;
+volatile uint8_t OTA_FLAG = 0;
 
 void CheckAndSetOTA(void);
 void OTA_CheckCommand(uint8_t *data, uint16_t len);
